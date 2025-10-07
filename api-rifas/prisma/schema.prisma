@@ -1,0 +1,196 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  //output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// ---------- Enums ----------
+enum RifaEstado { 
+  borrador 
+  publicada 
+  agotada 
+  cerrada 
+}
+
+enum OrdenEstado { 
+  pendiente 
+  pagado 
+  asignado 
+  cancelado 
+}
+
+enum Rol { 
+  admin 
+  operador 
+}
+
+// ---------- Core ----------
+model Rifa {
+  id             String   @id @default(uuid())
+  titulo         String
+  descripcion    String?
+  precioUnitario Decimal  @db.Decimal(10,2)
+  stockTotal     Int
+  stockAsignado  Int      @default(0)
+  estado         RifaEstado
+  media          Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  ordenes        Orden[]
+  asignaciones   Asignacion[]
+}
+
+model Orden {
+  id              String      @id @default(uuid())
+  rifaId          String
+  compradorEmail  String      @db.Citext
+  cantidad        Int
+  total           Decimal     @db.Decimal(10,2)
+  estado          OrdenEstado
+  paymentIntentId String?     @unique
+  idempotencyKey  String?     @unique   // <--- agrega esto
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  rifa            Rifa        @relation(fields: [rifaId], references: [id], onDelete: Cascade)
+  asignaciones    Asignacion[]
+
+  webhooks        WebhookEvent[] @relation("OrdenToWebhook")
+  emailLogs       EmailLog[]     @relation("OrdenToEmailLog")
+
+  @@index([rifaId])
+  @@index([estado])
+  @@index([compradorEmail])
+}
+
+
+model Asignacion {
+  id        String   @id @default(uuid())
+  ordenId   String
+  rifaId    String
+  numero    Int
+  createdAt DateTime @default(now())
+
+  orden     Orden    @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  rifa      Rifa     @relation(fields: [rifaId], references: [id], onDelete: Cascade)
+
+  @@unique([rifaId, numero])
+  @@index([ordenId])
+}
+
+model WebhookEvent {
+  id              String   @id @default(uuid())
+  provider        String
+  paymentIntentId String   @unique
+  signatureValid  Boolean  @default(false)
+  payload         Json
+  processedAt     DateTime?
+  ordenId         String?
+
+  // Relación nombrada y lado opuesto en Orden.webhooks
+  orden           Orden?   @relation("OrdenToWebhook", fields: [ordenId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+}
+
+// ---------- Admin / Seguridad ----------
+model Usuario {
+  id        String          @id @default(uuid())
+  email     String          @unique @db.Citext
+  passHash  String
+  rol       Rol
+  nombreUnido String
+  createdAt DateTime        @default(now())
+  isActive      Boolean     @default(false)
+   lastLogin   DateTime?   
+
+  // back-relation nombrada (hace juego con PasswordReset.usuario)
+  passwordResets PasswordReset[] @relation("UsuarioToPasswordReset")
+
+  @@index([rol])
+  @@index([isActive])
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  usuarioId String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relación nombrada y lado opuesto en Usuario.passwordResets
+  usuario   Usuario  @relation("UsuarioToPasswordReset", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+}
+
+model Auditoria {
+  id        String   @id @default(uuid())
+  entidad   String
+  entidadId String?
+  accion    String
+  payload   Json?
+  createdAt DateTime @default(now())
+}
+
+
+// ---------- Autoconsulta / Protección ----------
+model MisNumerosToken {
+  id        String   @id @default(uuid())
+  email     String   @db.Citext
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model EmailLog {
+  id        String   @id @default(uuid())
+  to        String
+  template  String
+  data      Json?
+  status    String   // sent|failed
+  error     String?
+  createdAt DateTime @default(now())
+
+  ordenId   String?
+
+  // Relación nombrada y lado opuesto en Orden.emailLogs
+  orden     Orden?   @relation("OrdenToEmailLog", fields: [ordenId], references: [id], onDelete: SetNull)
+}
+
+model RateLimit {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  count     Int      @default(0)
+  windowEnd DateTime
+  createdAt DateTime @default(now())
+}
+
+model EmailTemplate {
+  id         String   @id @default(uuid())
+  name       String                     // 'payment_confirmed' | 'numbers_assigned' | ...
+  locale     String   @default("es-EC") // soporte simple a multi-idioma
+  subjectTpl String                     // ej: 'Pago confirmado - {{rifaTitulo}}'
+  htmlTpl    String                     // HTML con {{placeholders}}
+  textTpl    String?                    // opcional
+  isActive   Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  @@unique([name, locale])
+}

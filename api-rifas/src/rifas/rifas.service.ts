@@ -3,10 +3,15 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRifaDto } from './dto/create-rifa.dto';
 import { UpdateRifaDto } from './dto/update-rifa.dto';
 import { RifaEstado } from '@prisma/client';
+import { AuditoriaService } from 'src/auditoria/auditoria.service';
+
 
 @Injectable()
 export class RifasService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private auditoriaService: AuditoriaService,
+  ) {}
 
   async listPublic(opts: { estado: string, page: number, limit: number }) {
     const estado = opts.estado as RifaEstado;
@@ -39,11 +44,11 @@ export class RifasService {
     return r;
   }
 
-  async create(dto: CreateRifaDto) {
+  async create(dto: CreateRifaDto, usuarioId: string) {
     if (dto.precioUnitario <= 0) throw new BadRequestException('Precio inválido');
     if (dto.stockTotal <= 0) throw new BadRequestException('Stock inválido');
 
-    return this.prismaService.rifa.create({
+    const rifa = await this.prismaService.rifa.create({
       data: {
         titulo: dto.titulo,
         descripcion: dto.descripcion,
@@ -53,10 +58,19 @@ export class RifasService {
         media: dto.media ?? [],
       },
     });
+
+    await this.auditoriaService.log({
+      entidad: 'Rifa',
+      entidadId: rifa.id,
+      accion: 'create',
+      payload: { by: usuarioId, dto },
+    });
+
+    return rifa;
   }
 
-  async update(id: string, dto: UpdateRifaDto) {
-    // regla: no reducir stockTotal por debajo de stockAsignado
+
+  async update(id: string, dto: UpdateRifaDto, usuarioId: string) {
     if (dto.stockTotal !== undefined) {
       const r = await this.prismaService.rifa.findUnique({ where: { id } });
       if (!r) throw new NotFoundException();
@@ -64,13 +78,49 @@ export class RifasService {
         throw new BadRequestException('stockTotal no puede ser menor a stockAsignado');
       }
     }
-    return this.prismaService.rifa.update({ where: { id }, data: dto });
+
+    const before = await this.prismaService.rifa.findUnique({ where: { id } });
+    if (!before) throw new NotFoundException();
+
+    const after = await this.prismaService.rifa.update({ where: { id }, data: dto });
+
+    await this.auditoriaService.log({
+      entidad: 'Rifa',
+      entidadId: id,
+      accion: 'update',
+      payload: { by: usuarioId, before: this.pickRifaAuditFields(before), after: this.pickRifaAuditFields(after) },
+    });
+
+    return after;
   }
 
-  async cambiarEstado(id: string, estado: RifaEstado) {
+  pickRifaAuditFields(x: any) {
+    return {
+      titulo: x.titulo,
+      precioUnitario: x.precioUnitario,
+      stockTotal: x.stockTotal,
+      stockAsignado: x.stockAsignado,
+      estado: x.estado,
+    };
+  }
+
+  
+
+  async cambiarEstado(id: string, estado: RifaEstado, usuarioId: string) {
     const r = await this.prismaService.rifa.findUnique({ where: { id } });
     if (!r) throw new NotFoundException();
-    // simple: si no hay stock restante, puedes marcar agotada automáticamente
-    return this.prismaService.rifa.update({ where: { id }, data: { estado } });
+
+    const updated = await this.prismaService.rifa.update({ where: { id }, data: { estado } });
+
+    await this.auditoriaService.log({
+      entidad: 'Rifa',
+      entidadId: id,
+      accion: 'state_change',
+      payload: { by: usuarioId, from: r.estado, to: estado },
+    });
+
+    return updated;
   }
+
+  
 }

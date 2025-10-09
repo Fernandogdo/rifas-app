@@ -9,5 +9,6 @@ import { EmailModule } from 'src/email/email.module';
   imports: [PrismaModule, EmailModule],
   providers: [OrdersService, AssignService],
   controllers: [OrdersController],
+  exports: [AssignService],         // <-- EXPORTA AssignService
 })
 export class OrdersModule {}

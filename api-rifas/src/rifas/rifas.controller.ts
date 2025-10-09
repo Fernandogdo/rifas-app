@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, Req } from '@nestjs/common';
 import { RifasService } from './rifas.service';
 import { CreateRifaDto } from './dto/create-rifa.dto';
 import { UpdateRifaDto } from './dto/update-rifa.dto';
@@ -26,32 +26,32 @@ export class RifasController {
   }
 
   // --- admin ---
-  @UseGuards(JwtAuthGuard, RolesGuard)
+   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('admin/rifas')
-  create(@Body() dto: CreateRifaDto) {
-    return this.rifas.create(dto);
+  create(@Body() dto: CreateRifaDto, @Req() req: any) {
+    return this.rifas.create(dto, req.user.id); // ← pasa usuarioId
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch('admin/rifas/:id')
-  update(@Param('id') id: string, @Body() dto: UpdateRifaDto) {
-    return this.rifas.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateRifaDto, @Req() req: any) {
+    return this.rifas.update(id, dto, req.user.id); // ← pasa usuarioId
   }
 
   // publicar/cerrar
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('admin/rifas/:id/publicar')
-  publicar(@Param('id') id: string) {
-    return this.rifas.cambiarEstado(id, 'publicada');
+  publicar(@Param('id') id: string, @Req() req: any) {
+    return this.rifas.cambiarEstado(id, 'publicada', req.user.id); // ← pasa usuarioId
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('admin/rifas/:id/cerrar')
-  cerrar(@Param('id') id: string) {
-    return this.rifas.cambiarEstado(id, 'cerrada');
+  cerrar(@Param('id') id: string, @Req() req: any) {
+    return this.rifas.cambiarEstado(id, 'cerrada', req.user.id); // ← pasa usuarioId
   }
 }

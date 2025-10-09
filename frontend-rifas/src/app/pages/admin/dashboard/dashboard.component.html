@@ -1,0 +1,282 @@
+<section class="p-6 space-y-6">
+    <h2 class="text-2xl font-semibold">Dashboard</h2>
+
+    <!-- SKELETON -->
+    @if (loading()) {
+    <div class="animate-pulse grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="h-24 bg-slate-200 rounded-xl"></div>
+        <div class="h-24 bg-slate-200 rounded-xl"></div>
+        <div class="h-24 bg-slate-200 rounded-xl"></div>
+        <div class="h-24 bg-slate-200 rounded-xl"></div>
+    </div>
+    } @else {
+
+    @if (error()) {
+    <div class="rounded-xl border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">{{ error() }}</div>
+    }
+
+    <!-- KPIs globales -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+            <div class="text-slate-500 text-sm">Ventas totales</div>
+            <div class="text-2xl font-bold mt-1">{{ ventasMonto() | currency:'USD':'symbol':'1.0-2' }}</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+            <div class="text-slate-500 text-sm">Rifas activas</div>
+            <div class="text-2xl font-bold mt-1">{{ rifasActivas() }}</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+            <div class="text-slate-500 text-sm">Tickets restantes</div>
+            <div class="text-2xl font-bold mt-1">{{ ticketsRestantes() | number }}</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+            <div class="text-slate-500 text-sm">Avance promedio</div>
+            <div class="text-2xl font-bold mt-1">{{ avancePromedio() | number:'1.0-1' }}%</div>
+        </div>
+    </div>
+
+    <!-- Top rifas -->
+    <div class="bg-white rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold">Top rifas por avance</h3>
+            <a routerLink="/admin/rifas" class="text-sm text-slate-600 hover:underline">ver todas</a>
+        </div>
+
+        @if (topRifas().length === 0) {
+        <div class="text-sm text-slate-500">No hay rifas.</div>
+        } @else {
+        <ul class="space-y-3">
+            @for (r of topRifas(); track r.id) {
+            <li class="cursor-pointer" (click)="clickTopRifa(r)">
+                <div class="flex items-center justify-between text-sm mb-1">
+                    <div class="font-medium text-slate-900">{{ r.titulo }}</div>
+                    <div class="text-slate-600">
+                        {{ (r.porcentajeVendido*100) | number:'1.0-1' }}% • Restantes: {{ r.restantes }}
+                    </div>
+                </div>
+                <div class="h-2 bg-slate-200 rounded">
+                    <div class="h-2 bg-emerald-500 rounded" [style.width.%]="r.porcentajeVendido * 100"></div>
+                </div>
+            </li>
+            }
+        </ul>
+        }
+    </div>
+
+    <!-- Drilldown por rifa seleccionada -->
+    <div class="bg-white rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+        <div class="flex items-center justify-between mb-4 gap-4">
+            <h3 class="font-semibold">Detalle por rifa</h3>
+
+            <!-- Selector de rifa -->
+            <select class="border rounded-lg px-3 py-2 text-sm" [ngModel]="selectedRifaId()"
+                (ngModelChange)="onSelectRifa($event)">
+                @for (r of rifas(); track r.id) {
+                <option [value]="r.id">{{ r.titulo }}</option>
+                }
+            </select>
+        </div>
+
+        @if (detailsLoading()) {
+        <div class="animate-pulse h-24 bg-slate-200 rounded-xl"></div>
+        } @else if (detailsError()) {
+        <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 px-3 py-2 text-sm">{{ detailsError() }}
+        </div>
+        } @else if (details()) {
+
+        <!-- KPIs de la rifa -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+                <div class="text-slate-500 text-sm">Vendidos</div>
+                <div class="text-2xl font-bold mt-1">{{ details()!.counters.ticketsVendidos | number }}</div>
+            </div>
+            <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+                <div class="text-slate-500 text-sm">Pendientes</div>
+                <div class="text-2xl font-bold mt-1">{{ details()!.counters.ticketsPendientes | number }}</div>
+            </div>
+            <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+                <div class="text-slate-500 text-sm">Restantes</div>
+                <div class="text-2xl font-bold mt-1">{{ details()!.counters.restantes | number }}</div>
+            </div>
+            <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+                <div class="text-slate-500 text-sm">% vendido</div>
+                <div class="text-2xl font-bold mt-1">{{ (details()!.counters.porcentajeVendido * 100) | number:'1.0-1'
+                    }}%</div>
+            </div>
+            <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+                <div class="text-slate-500 text-sm">Monto</div>
+                <div class="text-2xl font-bold mt-1">{{ details()!.counters.ventasMonto |
+                    currency:'USD':'symbol':'1.0-2' }}</div>
+            </div>
+        </div>
+
+        <!-- Breakdown por estado -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            @for (e of details()!.estados; track e.estado) {
+            <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+                <div class="text-slate-500 text-sm capitalize">{{ e.estado }}</div>
+                <div class="mt-1 text-sm text-slate-700">Órdenes: <span class="font-semibold">{{ e.ordenes }}</span>
+                </div>
+                <div class="mt-1 text-sm text-slate-700">Tickets: <span class="font-semibold">{{ e.tickets }}</span>
+                </div>
+                <div class="mt-1 text-sm text-slate-700">Monto: <span class="font-semibold">{{ e.monto | currency:'USD'
+                        }}</span></div>
+            </div>
+            }
+        </div>
+
+        <!-- Serie diaria (barras simples) -->
+        <!-- <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5 mb-4">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="font-semibold">Tickets por día (últimos {{ details()!.serieDiaria.length }} días con
+                    actividad)</h4>
+            </div>
+            <div class="h-28 flex items-end gap-1">
+                @for (p of details()!.serieDiaria; track p.fecha) {
+                <div class="bg-blue-500/80 rounded-t" style="width:8px"
+                    [style.height.%]="(p.tickets / maxTickets()) * 100"
+                    [title]="(p.fecha | date:'MMM d') + ' • ' + p.tickets + ' tickets'">
+                </div>
+                }
+            </div>
+            <div class="mt-2 text-xs text-slate-500">
+                Máximo diario: {{ maxTickets() }} tickets
+            </div>
+        </div> -->
+        <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5 mb-4">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="font-semibold">
+                    Tickets por día (últimos {{ details()!.serieDiaria.length }} días con actividad)
+                </h4>
+            </div>
+            <div class="h-64 relative">
+                <canvas #serieChart class="block w-full h-full"></canvas> <!-- 👈 importante -->
+            </div>
+        </div>
+
+
+
+        <!-- Top compradores -->
+        <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5 mb-4">
+            <h4 class="font-semibold mb-2">Top compradores</h4>
+            @if (details()!.topCompradores.length === 0) {
+            <div class="text-sm text-slate-500">Sin datos.</div>
+            } @else {
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="text-left text-slate-500">
+                        <tr>
+                            <th class="py-2 pr-4">Email</th>
+                            <th class="py-2 pr-4">Órdenes</th>
+                            <th class="py-2 pr-4">Tickets</th>
+                            <th class="py-2 pr-4">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-slate-900">
+                        @for (t of details()!.topCompradores; track t.email) {
+                        <tr class="border-t border-slate-100">
+                            <td class="py-2 pr-4">{{ t.email }}</td>
+                            <td class="py-2 pr-4">{{ t.ordenes }}</td>
+                            <td class="py-2 pr-4">{{ t.tickets }}</td>
+                            <td class="py-2 pr-4">{{ t.monto | currency:'USD' }}</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+        </div>
+
+        <!-- Últimas órdenes de esta rifa -->
+        <div class="rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="font-semibold">Últimas órdenes de esta rifa</h4>
+                <a routerLink="/admin/ordenes" class="text-sm text-slate-600 hover:underline">ver todas</a>
+            </div>
+            @if (details()!.ultimasOrdenes.length === 0) {
+            <div class="text-sm text-slate-500">Sin órdenes recientes.</div>
+            } @else {
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="text-left text-slate-500">
+                        <tr>
+                            <th class="py-2 pr-4">Fecha</th>
+                            <th class="py-2 pr-4">Email</th>
+                            <th class="py-2 pr-4">Total</th>
+                            <th class="py-2">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-slate-900">
+                        @for (o of details()!.ultimasOrdenes; track o.id) {
+                        <tr class="border-t border-slate-100">
+                            <td class="py-2 pr-4">{{ o.createdAt | date:'short' }}</td>
+                            <td class="py-2 pr-4">{{ o.compradorEmail }}</td>
+                            <td class="py-2 pr-4">{{ o.total | currency:'USD':'symbol':'1.0-2' }}</td>
+                            <td class="py-2">
+                                <span class="px-2 py-0.5 rounded text-xs" [ngClass]="{
+                            'bg-slate-200 text-slate-700': o.estado==='pendiente',
+                            'bg-blue-100 text-blue-800': o.estado==='pagado',
+                            'bg-emerald-100 text-emerald-800': o.estado==='asignado',
+                            'bg-rose-100 text-rose-800': o.estado==='cancelado'
+                          }">
+                                    {{ o.estado }}
+                                </span>
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+        </div>
+        }
+    </div>
+
+    <!-- Últimas órdenes (global) -->
+    <div class="bg-white rounded-xl p-4 shadow ring-1 ring-slate-900/5">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold">Últimas órdenes (global)</h3>
+            <a routerLink="/admin/ordenes" class="text-sm text-slate-600 hover:underline">ver todas</a>
+        </div>
+
+        @if (ultimasOrdenesGlobal().length === 0) {
+        <div class="text-sm text-slate-500">Sin órdenes recientes.</div>
+        } @else {
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="text-left text-slate-500">
+                    <tr>
+                        <th class="py-2 pr-4">Fecha</th>
+                        <th class="py-2 pr-4">Email</th>
+                        <th class="py-2 pr-4">Rifa</th>
+                        <th class="py-2 pr-4">Total</th>
+                        <th class="py-2">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="text-slate-900">
+                    @for (o of ultimasOrdenesGlobal(); track o.id) {
+                    <tr class="border-t border-slate-100">
+                        <td class="py-2 pr-4">{{ o.createdAt | date:'short' }}</td>
+                        <td class="py-2 pr-4">{{ o.compradorEmail }}</td>
+                        <td class="py-2 pr-4">{{ o.rifa.titulo }}</td>
+                        <td class="py-2 pr-4">{{ o.total | currency:'USD':'symbol':'1.0-2' }}</td>
+                        <td class="py-2">
+                            <span class="px-2 py-0.5 rounded text-xs" [ngClass]="{
+                        'bg-slate-200 text-slate-700': o.estado==='pendiente',
+                        'bg-blue-100 text-blue-800': o.estado==='pagado',
+                        'bg-emerald-100 text-emerald-800': o.estado==='asignado',
+                        'bg-rose-100 text-rose-800': o.estado==='cancelado'
+                      }">
+                                {{ o.estado }}
+                            </span>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
+    </div>
+
+    }
+</section>

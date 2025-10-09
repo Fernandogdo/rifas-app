@@ -1,0 +1,136 @@
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div class="w-full max-w-md">
+        <div class="mb-6 text-center">
+            <h1 class="text-2xl font-bold text-slate-900">Panel Administrativo</h1>
+            <p class="text-slate-500 text-sm">Acceso para administradores</p>
+        </div>
+
+        <!-- Card -->
+        <div class="bg-white shadow-xl rounded-2xl p-6 ring-1 ring-slate-900/5">
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-4">
+                <button class="px-3 py-1.5 rounded-lg text-sm font-medium" [class.bg-slate-900]="mode() === 'login'"
+                    [class.text-white]="mode() === 'login'" [class.bg-slate-100]="mode() !== 'login'"
+                    (click)="mode.set('login')">
+                    Iniciar sesión
+                </button>
+                <button class="px-3 py-1.5 rounded-lg text-sm font-medium" [class.bg-slate-900]="mode() === 'forgot'"
+                    [class.text-white]="mode() === 'forgot'" [class.bg-slate-100]="mode() !== 'forgot'"
+                    (click)="mode.set('forgot')">
+                    Olvidé mi contraseña
+                </button>
+                <button class="px-3 py-1.5 rounded-lg text-sm font-medium" [class.bg-slate-900]="mode() === 'reset'"
+                    [class.text-white]="mode() === 'reset'" [class.bg-slate-100]="mode() !== 'reset'"
+                    (click)="mode.set('reset')">
+                    Reset con token
+                </button>
+            </div>
+
+            <!-- Alerts -->
+            @if (errorMsg()) {
+            <div class="mb-3 rounded-lg border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">
+                {{ errorMsg() }}
+            </div>
+            }
+            @if (infoMsg()) {
+            <div class="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 px-3 py-2 text-sm">
+                {{ infoMsg() }}
+            </div>
+            }
+
+            <!-- LOGIN -->
+            <!-- LOGIN -->
+            @if (mode() === 'login') {
+            <form [formGroup]="form" (ngSubmit)="onLogin()" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="email">
+                        Email
+                    </label>
+                    <input id="email" formControlName="email" type="email" inputmode="email" autocomplete="username"
+                        autocapitalize="off" autocorrect="off" spellcheck="false" class="mt-0 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900
+               outline-none ring-0 transition focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10
+               placeholder:text-slate-400" placeholder="tu@email.com" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="password">
+                        Contraseña
+                    </label>
+                    <input id="password" formControlName="password" type="password" autocomplete="current-password"
+                        autocapitalize="off" autocorrect="off" spellcheck="false" class="mt-0 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900
+               outline-none ring-0 transition focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10
+               placeholder:text-slate-400" placeholder="••••••••" />
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                        <input type="checkbox" formControlName="remember" class="rounded border-slate-300" />
+                        Recordarme
+                    </label>
+                    <button type="button" class="text-sm text-slate-700 hover:underline" (click)="mode.set('forgot')">
+                        ¿Olvidaste tu contraseña?
+                    </button>
+                </div>
+
+                <button type="submit" [disabled]="loading()" class="w-full inline-flex items-center justify-center rounded-xl bg-slate-900 text-white font-medium py-2.5
+             hover:bg-slate-800 disabled:opacity-60">
+                    @if (loading()) {
+                    <svg class="animate-spin mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    }
+                    Ingresar
+                </button>
+            </form>
+            }
+
+            @else if (mode() === 'forgot') {
+            <!-- FORGOT -->
+            <form [formGroup]="forgotForm" (ngSubmit)="onForgot()" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700" for="forgotEmail">Email</label>
+                    <input id="forgotEmail" formControlName="email" type="email"
+                        class="mt-1 w-full rounded-lg border-slate-300 focus:ring-2 focus:ring-slate-900/20"
+                        placeholder="tu@email.com" />
+                </div>
+                <button type="submit" [disabled]="loading()"
+                    class="w-full rounded-lg bg-slate-900 text-white font-medium py-2.5 hover:bg-slate-800 disabled:opacity-60">
+                    Enviar enlace de recuperación
+                </button>
+                <button type="button"
+                    class="w-full mt-1 rounded-lg bg-slate-100 text-slate-800 font-medium py-2.5 hover:bg-slate-200"
+                    (click)="mode.set('login')">
+                    Volver a iniciar sesión
+                </button>
+            </form>
+            }
+            @else if (mode() === 'reset') {
+            <!-- RESET -->
+            <form [formGroup]="resetForm" (ngSubmit)="onReset()" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700" for="token">Token</label>
+                    <input id="token" formControlName="token"
+                        class="mt-1 w-full rounded-lg border-slate-300 focus:ring-2 focus:ring-slate-900/20"
+                        placeholder="Pega tu token aquí" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700" for="newPassword">Nueva contraseña</label>
+                    <input id="newPassword" formControlName="newPassword" type="password"
+                        class="mt-1 w-full rounded-lg border-slate-300 focus:ring-2 focus:ring-slate-900/20"
+                        placeholder="••••••••" />
+                </div>
+                <button type="submit" [disabled]="loading()"
+                    class="w-full rounded-lg bg-slate-900 text-white font-medium py-2.5 hover:bg-slate-800 disabled:opacity-60">
+                    Actualizar contraseña
+                </button>
+            </form>
+            }
+        </div>
+
+        <p class="mt-6 text-center text-xs text-slate-500">
+            © {{ currentYear }} Rifas — Admin
+        </p>
+    </div>
+</div>

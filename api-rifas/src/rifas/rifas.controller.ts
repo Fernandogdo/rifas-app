@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+  Req,
+  Delete, // ← añadido
+} from '@nestjs/common';
 import { RifasService } from './rifas.service';
 import { CreateRifaDto } from './dto/create-rifa.dto';
 import { UpdateRifaDto } from './dto/update-rifa.dto';
@@ -25,14 +36,44 @@ export class RifasController {
     return this.rifas.getPublic(id);
   }
 
-  // --- admin ---
-   @UseGuards(JwtAuthGuard, RolesGuard)
+  // --- admin: LISTAR (con search/estado/sort/paginación) ---
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('admin/rifas')
+  listAdmin(
+    @Query('search') search?: string,
+    @Query('estado') estado?: 'borrador' | 'publicada' | 'agotada' | 'cerrada',
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+    // tu frontend usa 'created_at:desc' → mapeamos en el servicio
+    @Query('sort') sort = 'created_at:desc',
+  ) {
+    return this.rifas.listAdmin({
+      search: search?.trim() || undefined,
+      estado,
+      page: +page,
+      limit: +limit,
+      sort,
+    });
+  }
+
+  // --- admin: GET detalle ---
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('admin/rifas/:id')
+  getAdmin(@Param('id') id: string) {
+    return this.rifas.getAdmin(id);
+  }
+
+  // --- admin: CREATE ---
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('admin/rifas')
   create(@Body() dto: CreateRifaDto, @Req() req: any) {
     return this.rifas.create(dto, req.user.id); // ← pasa usuarioId
   }
 
+  // --- admin: UPDATE ---
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch('admin/rifas/:id')
@@ -40,7 +81,15 @@ export class RifasController {
     return this.rifas.update(id, dto, req.user.id); // ← pasa usuarioId
   }
 
-  // publicar/cerrar
+  // --- admin: DELETE ---
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Delete('admin/rifas/:id')
+  remove(@Param('id') id: string, @Req() req: any) {
+    return this.rifas.remove(id, req.user.id);
+  }
+
+  // --- admin: publicar/cerrar ---
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('admin/rifas/:id/publicar')

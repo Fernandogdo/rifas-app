@@ -3,7 +3,7 @@ import { CommonModule, NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Subject, catchError, of, switchMap, takeUntil, timer } from 'rxjs';
 import { DashboardService, AdminDashboardDto } from '../../../services/dashboard/dashboard.service';
-import { RifaDetailsDto } from '../../../interfaces/rifa/rita-detail.interface';
+import { RifaDetailsDto } from '../../../DTOs/rifa-detail.dto';
 import { RifaSummary } from '../../../interfaces/rifa/rifa-summary.interface';
 
 import { FormsModule } from '@angular/forms';

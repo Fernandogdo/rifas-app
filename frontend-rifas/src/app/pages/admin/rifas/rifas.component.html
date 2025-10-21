@@ -8,13 +8,15 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <a routerLink="/admin/rifas/nueva"
-         class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 shadow-sm">
+      <!-- Abrir modal de creación -->
+      <button type="button"
+              (click)="openCreate()"
+              class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 shadow-sm">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         Nueva rifa
-      </a>
+      </button>
     </div>
   </div>
 
@@ -164,10 +166,11 @@
       <div class="mx-auto mb-3 h-10 w-10 rounded-2xl bg-slate-100"></div>
       <h3 class="text-slate-800 font-medium">No hay rifas</h3>
       <p class="text-sm text-slate-500">Crea tu primera rifa para comenzar a vender.</p>
-      <a routerLink="/admin/rifas/nueva"
-         class="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 shadow-sm">
+      <button type="button"
+              (click)="openCreate()"
+              class="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 shadow-sm">
         Nueva rifa
-      </a>
+      </button>
     </div>
   }
 
@@ -293,6 +296,116 @@
                     class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50">
               @if (saving()) { <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span> }
               Guardar cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL CREAR -->
+  @if (showCreate()) {
+    <!-- Overlay -->
+    <div class="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]"
+         (click)="closeCreate()"
+         (keydown.escape)="closeCreate()"></div>
+
+    <!-- Panel -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         (keydown.escape)="closeCreate()">
+      <div class="w-full max-w-xl rounded-2xl bg-white shadow-xl ring-1 ring-slate-900/10"
+           role="dialog" aria-modal="true" aria-labelledby="create-title"
+           (click)="$event.stopPropagation()">
+        <div class="border-b border-slate-100 px-5 py-4">
+          <h3 id="create-title" class="text-lg font-semibold text-slate-900">Nueva rifa</h3>
+          <p class="text-xs text-slate-500">Completa los datos para crear la rifa.</p>
+        </div>
+
+        <form (submit)="saveCreate($event)">
+          <div class="px-5 py-4 space-y-4">
+
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Título</label>
+              <input id="create-titulo"
+                     [ngModel]="create().titulo"
+                     (ngModelChange)="updateCreate('titulo', $event)"
+                     [ngModelOptions]="{standalone: true}"
+                     type="text"
+                     class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500/30"
+                     required />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Descripción</label>
+              <textarea
+                     [ngModel]="create().descripcion"
+                     (ngModelChange)="updateCreate('descripcion', $event)"
+                     [ngModelOptions]="{standalone: true}"
+                     rows="3"
+                     class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500/30"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Precio</label>
+                <input
+                  [ngModel]="create().precioUnitario"
+                  (ngModelChange)="updateCreate('precioUnitario', $event)"
+                  [ngModelOptions]="{standalone: true}"
+                  type="number" step="0.01" min="0"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500/30"
+                  required />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Stock total</label>
+                <input
+                  [ngModel]="create().stockTotal"
+                  (ngModelChange)="updateCreate('stockTotal', $event)"
+                  [ngModelOptions]="{standalone: true}"
+                  type="number" step="1" min="1"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500/30"
+                  required />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Estado</label>
+                <select
+                  [ngModel]="create().estado"
+                  (ngModelChange)="updateCreate('estado', $event)"
+                  [ngModelOptions]="{standalone: true}"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                  <option value="borrador">Borrador</option>
+                  <option value="publicada">Publicada</option>
+                  <option value="agotada">Agotada</option>
+                  <option value="cerrada">Cerrada</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Imagen (URL)</label>
+              <input
+                [ngModel]="create().mediaUrl"
+                (ngModelChange)="updateCreate('mediaUrl', $event)"
+                [ngModelOptions]="{standalone: true}"
+                type="url"
+                placeholder="https://..."
+                class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500/30" />
+              <p class="mt-1 text-[11px] text-slate-500">Usa la primera imagen como portada.</p>
+            </div>
+
+          </div>
+
+          <div class="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-4">
+            <button type="button"
+                    (click)="closeCreate()"
+                    class="rounded-xl px-3 py-2 text-sm ring-1 ring-slate-200 hover:bg-slate-50">
+              Cancelar
+            </button>
+            <button type="submit"
+                    [disabled]="!isCreateValid() || saving()"
+                    class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50">
+              @if (saving()) { <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span> }
+              Crear rifa
             </button>
           </div>
         </form>

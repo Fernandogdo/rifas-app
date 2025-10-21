@@ -3,20 +3,27 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { RifasService, RifaListResponse } from '../../../services/rifas/rifas.service';
-
 import { Rifa, Estado } from '../../../interfaces/rifa/rifa.interface';
 import { RifaDTO } from '../../../DTOs/rifa.dto';
 
-  type EditForm = {
-    titulo: string;
-    descripcion: string;
-    precioUnitario: string; // lo tratamos como string y casteamos al guardar
-    stockTotal: string;
-    estado: Estado;
-    mediaUrl: string;
-  };
+/** Form types */
+type EditForm = {
+  titulo: string;
+  descripcion: string;
+  precioUnitario: string;
+  stockTotal: string;
+  estado: Estado;
+  mediaUrl: string;
+};
 
-
+type CreateForm = {
+  titulo: string;
+  descripcion: string;
+  precioUnitario: string;
+  stockTotal: string;
+  estado: Estado;     // puedes dejarlo fijo en 'borrador' si prefieres
+  mediaUrl: string;
+};
 
 @Component({
   selector: 'app-admin-rifas',
@@ -45,9 +52,9 @@ export default class RifasComponent implements OnInit {
     return Math.max(1, Math.ceil(t / l));
   });
 
-   // -------- MODAL EDIT --------
+  // -------- MODAL EDIT --------
   showEdit = signal<boolean>(false);
-  saving   = signal<boolean>(false);
+  saving   = signal<boolean>(false); // se reutiliza para crear/editar
   editId   = signal<string | null>(null);
 
   edit = signal<EditForm>({
@@ -59,6 +66,16 @@ export default class RifasComponent implements OnInit {
     mediaUrl: ''
   });
 
+  // -------- MODAL CREATE --------
+  showCreate = signal<boolean>(false);
+  create = signal<CreateForm>({
+    titulo: '',
+    descripcion: '',
+    precioUnitario: '',
+    stockTotal: '',
+    estado: 'borrador',
+    mediaUrl: ''
+  });
 
   constructor(private rifasService: RifasService) {}
 
@@ -87,11 +104,7 @@ export default class RifasComponent implements OnInit {
   }
 
   resetAndLoad() { this.page.set(1); this.load(); }
-  onSearchChange(v: string) { this.search.set(v ?? ''); this.resetAndLoad(); 
-
-  console.log("🚀 ~ RifasComponent ~ onSearchChange ~ v:", v)
-
-  }
+  onSearchChange(v: string) { this.search.set(v ?? ''); this.resetAndLoad(); }
   onEstadoChange(v: Estado | 'todas') { this.estado.set(v ?? 'todas'); this.resetAndLoad(); }
   onLimitChange(v: number | string) {
     const n = typeof v === 'string' ? parseInt(v, 10) : v;
@@ -117,14 +130,17 @@ export default class RifasComponent implements OnInit {
     }
   }
 
-  async publicar(r: Rifa) { if (r.estado === 'publicada') return;
+  async publicar(r: Rifa) {
+    if (r.estado === 'publicada') return;
     if (!confirm(`¿Publicar la rifa "${r.titulo}"?`)) return;
     await this.safeRun(() => this.rifasService.updateRifa(r.id, { estado: 'publicada' }));
   }
-  async cerrar(r: Rifa) { if (!confirm(`¿Cerrar la rifa "${r.titulo}"?`)) return;
+  async cerrar(r: Rifa) {
+    if (!confirm(`¿Cerrar la rifa "${r.titulo}"?`)) return;
     await this.safeRun(() => this.rifasService.updateRifa(r.id, { estado: 'cerrada' }));
   }
-  async eliminar(r: Rifa) { if (!confirm(`Eliminar "${r.titulo}"?`)) return;
+  async eliminar(r: Rifa) {
+    if (!confirm(`Eliminar "${r.titulo}"?`)) return;
     await this.safeRun(() => this.rifasService.deleteRifa(r.id));
   }
 
@@ -155,7 +171,6 @@ export default class RifasComponent implements OnInit {
     });
     this.showEdit.set(true);
 
-    // foco inicial
     queueMicrotask(() => {
       const el = document.getElementById('edit-titulo') as HTMLInputElement | null;
       el?.focus();
@@ -168,11 +183,8 @@ export default class RifasComponent implements OnInit {
     this.editId.set(null);
   }
 
-  updateEdit<K extends keyof ReturnType<typeof this.edit>>(
-    key: K,
-    value: ReturnType<typeof this.edit>[K]
-  ) {
-    this.edit.update(prev => ({ ...prev, [key]: value } as any));
+  updateEdit<K extends keyof EditForm>(key: K, value: EditForm[K]) {
+    this.edit.update(prev => ({ ...prev, [key]: value }));
   }
 
   isEditValid(): boolean {
@@ -204,6 +216,67 @@ export default class RifasComponent implements OnInit {
     } catch (err: any) {
       console.error(err);
       this.error.set(err?.message ?? 'No se pudo guardar los cambios');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  // --------- CREATE MODAL LOGIC ----------
+  openCreate() {
+    this.create.set({
+      titulo: '',
+      descripcion: '',
+      precioUnitario: '',
+      stockTotal: '',
+      estado: 'borrador',
+      mediaUrl: ''
+    });
+    this.showCreate.set(true);
+
+    queueMicrotask(() => {
+      const el = document.getElementById('create-titulo') as HTMLInputElement | null;
+      el?.focus();
+      el?.select();
+    });
+  }
+
+  closeCreate() {
+    this.showCreate.set(false);
+  }
+
+  updateCreate<K extends keyof CreateForm>(key: K, value: CreateForm[K]) {
+    this.create.update(prev => ({ ...prev, [key]: value }));
+  }
+
+  isCreateValid(): boolean {
+    const c = this.create();
+    return !!c.titulo?.trim()
+      && Number(c.precioUnitario) > 0
+      && Number(c.stockTotal) >= 1;
+  }
+
+  async saveCreate(ev: Event) {
+    ev.preventDefault();
+    if (!this.isCreateValid()) return;
+
+    const c = this.create();
+    const dto: RifaDTO = {
+      titulo: c.titulo?.trim(),
+      descripcion: c.descripcion?.trim() || undefined,
+      precioUnitario: Number(c.precioUnitario),
+      stockTotal: Number(c.stockTotal),
+      estado: c.estado, // o no lo envíes y el backend lo deja en 'borrador'
+      media: c.mediaUrl ? [{ url: c.mediaUrl }] : undefined,
+    };
+
+    this.saving.set(true);
+    try {
+      await this.rifasService.createRifa(dto);
+      this.closeCreate();
+      await this.load();
+    } catch (err: any) {
+      console.error(err);
+      this.error.set(err?.message ?? 'No se pudo crear la rifa');
     } finally {
       this.saving.set(false);
     }

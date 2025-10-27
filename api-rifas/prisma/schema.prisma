@@ -60,7 +60,11 @@ model Orden {
   total           Decimal     @db.Decimal(10,2)
   estado          OrdenEstado
   paymentIntentId String?     @unique
-  idempotencyKey  String?     @unique   // <--- agrega esto
+  idempotencyKey  String?     @unique
+  
+  // ID corto único que se envia como clientTransactionId a Payphone(<=15 chars)
+  clientTransactionId String? @unique @db.VarChar(15)
+
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -74,6 +78,7 @@ model Orden {
   @@index([estado])
   @@index([compradorEmail])
 }
+
 
 
 model Asignacion {

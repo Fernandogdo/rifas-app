@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RifaDetail } from './rifa-detail.component';
+import RifaDetailComponent  from './rifa-detail.component';
 
 describe('RifaDetail', () => {
-  let component: RifaDetail;
-  let fixture: ComponentFixture<RifaDetail>;
+  let component: RifaDetailComponent;
+  let fixture: ComponentFixture<RifaDetailComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RifaDetail]
+      imports: [RifaDetailComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(RifaDetail);
+    fixture = TestBed.createComponent(RifaDetailComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

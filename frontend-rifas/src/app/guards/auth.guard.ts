@@ -5,7 +5,7 @@ import { AuthService } from '../services/auth/auth.service';
 export const canMatchAdmin: CanMatchFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (auth.isLoggedIn()) return true;
-  router.navigate(['/admin/login']);
-  return false;
+  return auth.isLoggedIn()
+    ? true
+    : router.parseUrl('/login'); // o router.createUrlTree(['/login'])
 };

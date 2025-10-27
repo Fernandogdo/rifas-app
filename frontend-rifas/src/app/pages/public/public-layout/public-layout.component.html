@@ -1,1 +1,94 @@
-<p>public-layout.component works!</p>
+<!-- Header -->
+<header class="sticky top-0 z-40 bg-white/75 backdrop-blur border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <a routerLink="/" class="flex items-center gap-2">
+      <div class="h-8 w-8 rounded-xl bg-slate-900"></div>
+      <span class="font-semibold text-slate-900">Rifas</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-6 text-sm">
+      <a routerLink="/" class="hover:text-slate-900 text-slate-600">Inicio</a>
+      <a routerLink="/" fragment="como-funciona" class="hover:text-slate-900 text-slate-600">Cómo funciona</a>
+      <a routerLink="/" fragment="rifas" class="hover:text-slate-900 text-slate-600">Rifas</a>
+      <a routerLink="/mis-numeros" class="hover:text-slate-900 text-slate-600">Mis números</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Contenido -->
+<main class="min-h-[72vh] bg-slate-50">
+  <router-outlet />
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-slate-200 bg-white">
+  <div class="max-w-7xl mx-auto px-4 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <!-- Columna: Marca / descripción breve -->
+      <div>
+        <div class="flex items-center gap-2">
+          <div class="h-8 w-8 rounded-xl bg-slate-900"></div>
+          <span class="font-semibold text-slate-900">Rifas</span>
+        </div>
+        <p class="mt-3 text-sm text-slate-500">
+          Compra segura, asignación automática sin duplicados y notificaciones por email.
+        </p>
+      </div>
+
+      <!-- Columna: Navegación -->
+      <div>
+        <h3 class="text-sm font-semibold text-slate-900">Navegación</h3>
+        <ul class="mt-3 space-y-2 text-sm">
+          <li><a routerLink="/" class="text-slate-600 hover:text-slate-900">Inicio</a></li>
+          <li><a routerLink="/" fragment="como-funciona" class="text-slate-600 hover:text-slate-900">Cómo funciona</a></li>
+          <li><a routerLink="/" fragment="rifas" class="text-slate-600 hover:text-slate-900">Rifas</a></li>
+          <li><a routerLink="/mis-numeros" class="text-slate-600 hover:text-slate-900">Mis números</a></li>
+        </ul>
+      </div>
+
+      <!-- Columna: Ayuda -->
+      <div>
+        <h3 class="text-sm font-semibold text-slate-900">Ayuda</h3>
+        <ul class="mt-3 space-y-2 text-sm">
+          <li><a routerLink="/" fragment="faq" class="text-slate-600 hover:text-slate-900">Preguntas frecuentes</a></li>
+          <li><a href="#" class="text-slate-600 hover:text-slate-900">Soporte</a></li>
+          <li><a href="#" class="text-slate-600 hover:text-slate-900">Términos &amp; Privacidad</a></li>
+        </ul>
+      </div>
+
+      <!-- Columna: Síguenos -->
+      <div>
+        <h3 class="text-sm font-semibold text-slate-900">Síguenos</h3>
+        <p class="mt-3 text-sm text-slate-500">Novedades, ganadores y promociones.</p>
+        <div class="mt-4 flex items-center gap-3">
+          <!-- Facebook -->
+          <a href="https://facebook.com" target="_blank" rel="noopener"
+             class="inline-flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-slate-200 hover:bg-slate-50"
+             aria-label="Facebook">
+            <svg viewBox="0 0 24 24" class="h-5 w-5 text-slate-600">
+              <path fill="currentColor"
+                    d="M22 12.06C22 6.48 17.52 2 11.94 2S2 6.48 2 12.06c0 5 3.66 9.15 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.88 3.77-3.88 1.09 0 2.23.2 2.23.2v2.45h-1.26c-1.24 0-1.63.77-1.63 1.56v1.87h2.78l-.44 2.91h-2.34v7.03C18.34 21.21 22 17.06 22 12.06z"/>
+            </svg>
+          </a>
+          <!-- Instagram -->
+          <a href="https://instagram.com" target="_blank" rel="noopener"
+             class="inline-flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-slate-200 hover:bg-slate-50"
+             aria-label="Instagram">
+            <svg viewBox="0 0 24 24" class="h-5 w-5 text-slate-600">
+              <path fill="currentColor"
+                    d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7m5 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10m0 2.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6M18.25 6.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Línea inferior -->
+    <div class="mt-10 border-t border-slate-200 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+      <p class="text-sm text-slate-500">© {{ year }} Rifas — Hecho con ❤️</p>
+      <div class="text-xs text-slate-400">
+        Construido con Angular + Tailwind
+      </div>
+    </div>
+  </div>
+</footer>

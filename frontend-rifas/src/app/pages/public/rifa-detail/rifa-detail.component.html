@@ -1,1 +1,217 @@
-<p>rifa-detail works!</p>
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <a routerLink="/" class="text-sm text-slate-600 hover:text-slate-900">&larr; Volver</a>
+
+  @if (loading()) {
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="h-72 rounded-2xl bg-slate-200 animate-pulse"></div>
+      <div class="space-y-3">
+        <div class="h-6 w-2/3 bg-slate-200 rounded animate-pulse"></div>
+        <div class="h-4 w-1/2 bg-slate-200 rounded animate-pulse"></div>
+        <div class="h-32 bg-slate-200 rounded animate-pulse"></div>
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="mt-6 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">{{ error() }}</div>
+  } @else if (rifa()) {
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Galería -->
+      <div>
+        <img [src]="img()" alt="" class="w-full h-80 object-cover rounded-2xl ring-1 ring-slate-200">
+      </div>
+
+      <!-- Info -->
+      <div>
+        <h1 class="text-2xl md:text-3xl font-semibold text-slate-900">{{ rifa()!.titulo }}</h1>
+        <p class="mt-2 text-slate-600">{{ rifa()!.descripcion }}</p>
+
+        <div class="mt-4 flex items-center gap-4">
+          <div class="text-3xl font-bold text-slate-900">$ {{ rifa()!.precioUnitario | number:'1.2-2' }}</div>
+          <div class="text-sm text-slate-500">por ticket</div>
+        </div>
+
+        <div class="mt-4">
+          <div class="h-2 w-full rounded-full bg-slate-200">
+            <div class="h-2 rounded-full bg-slate-900" [style.width.%]="soldPct()"></div>
+          </div>
+          <div class="mt-1 text-xs text-slate-600">{{ soldPct() }}% vendido · Quedan {{ remaining() }}</div>
+        </div>
+
+        <!-- 1) Contacto y cantidad -->
+        <div class="mt-6 rounded-2xl border border-slate-200 p-4 bg-white space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Email</label>
+              <input
+                [ngModel]="email()"
+                (ngModelChange)="email.set($event)"
+                [ngModelOptions]="{standalone:true}"
+                type="email" placeholder="tu@correo.com"
+                class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500/30">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Cantidad</label>
+              <input
+                [ngModel]="qty()"
+                (ngModelChange)="qty.set( clampInt($event, 1, remaining()) )"
+                [ngModelOptions]="{standalone:true}"
+                type="number" min="1" [max]="remaining()"
+                class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            @for (n of [1,5,10,20]; track n) {
+              <button type="button" (click)="pick(n)"
+                class="rounded-xl px-3 py-1.5 text-sm ring-1 ring-slate-200 hover:bg-slate-50">+{{ n }}</button>
+            }
+            <div class="text-sm text-slate-500">Máx: {{ remaining() }}</div>
+          </div>
+        </div>
+
+        <!-- 2) Facturación (opcional) -->
+        <div id="facturacion" class="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center justify-between">
+            <div class="font-medium text-slate-900">¿Necesitas factura?</div>
+            <label class="inline-flex items-center cursor-pointer">
+              <input type="checkbox"
+                     [ngModel]="requiresInvoice()"
+                     (ngModelChange)="requiresInvoice.set(!!$event)"
+                     [ngModelOptions]="{standalone:true}"
+                     class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer
+                          peer-checked:bg-slate-900 relative
+                          after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                          after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all
+                          peer-checked:after:translate-x-full"></div>
+            </label>
+          </div>
+
+          @if (requiresInvoice()) {
+            <div class="mt-4 grid md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Tipo de documento</label>
+                <select
+                  [ngModel]="billing().docType"
+                  (ngModelChange)="patchBilling({ docType: $event })"
+                  [ngModelOptions]="{standalone:true}"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                  <option value="cedula">Cédula</option>
+                  <option value="ruc">RUC</option>
+                  <option value="pasaporte">Pasaporte</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Número</label>
+                <input
+                  [ngModel]="billing().docNumber"
+                  (ngModelChange)="patchBilling({ docNumber: $event })"
+                  [ngModelOptions]="{standalone:true}"
+                  type="text" inputmode="numeric"
+                  placeholder="Ej. 0102030405 / 1790012345001"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              </div>
+
+              <div [class.col-span-2]="billing().docType==='ruc'">
+                <label class="block text-xs font-medium text-slate-600 mb-1">
+                  {{ billing().docType === 'ruc' ? 'Razón social' : 'Nombres' }}
+                </label>
+                <input
+                  [ngModel]="billing().name"
+                  (ngModelChange)="patchBilling({ name: $event })"
+                  [ngModelOptions]="{standalone:true}"
+                  type="text"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              </div>
+
+              @if (billing().docType!=='ruc') {
+                <div>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Apellidos</label>
+                  <input
+                    [ngModel]="billing().lastName"
+                    (ngModelChange)="patchBilling({ lastName: $event })"
+                    [ngModelOptions]="{standalone:true}"
+                    type="text"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                </div>
+              }
+
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Teléfono (opcional)</label>
+                <input
+                  [ngModel]="billing().phone"
+                  (ngModelChange)="patchBilling({ phone: $event })"
+                  [ngModelOptions]="{standalone:true}"
+                  type="tel"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Dirección</label>
+                <input
+                  [ngModel]="billing().address"
+                  (ngModelChange)="patchBilling({ address: $event })"
+                  [ngModelOptions]="{standalone:true}"
+                  type="text"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Provincia</label>
+                <input
+                  [ngModel]="billing().province"
+                  (ngModelChange)="patchBilling({ province: $event })"
+                  [ngModelOptions]="{standalone:true}"
+                  type="text"
+                  placeholder="Ej. Pichincha"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Ciudad</label>
+                <input
+                  [ngModel]="billing().city"
+                  (ngModelChange)="patchBilling({ city: $event })"
+                  [ngModelOptions]="{standalone:true}"
+                  type="text"
+                  placeholder="Ej. Quito"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+              </div>
+            </div>
+
+            @if (billingError()) {
+              <div class="mt-3 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 px-3 py-2 text-sm">
+                {{ billingError() }}
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Avisos + CTA -->
+        @if (notice()) {
+          <div class="mt-4 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 px-3 py-2 text-sm">{{ notice() }}</div>
+        }
+
+        <div class="mt-4 flex items-center justify-between">
+          <div class="text-sm text-slate-600">
+            Total:
+            <span class="font-semibold text-slate-900">
+              $ {{ (qty() * (rifa()!.precioUnitario || 0)) | number:'1.2-2' }}
+            </span>
+          </div>
+          <button type="button" (click)="pagar()"
+                  [disabled]="busy() || remaining()<=0"
+                  class="inline-flex items-center rounded-2xl bg-slate-900 text-white px-5 py-2.5 font-medium disabled:opacity-50">
+            @if (busy()) {
+              <span class="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
+            }
+            Pagar con PayPhone
+          </button>
+        </div>
+
+        <div class="mt-3 text-xs text-slate-500">
+          Compra segura: creamos tu orden, te llevamos a PayPhone y, tras el pago, asignamos tus números y te enviamos email.
+        </div>
+      </div>
+    </div>
+  }
+</div>

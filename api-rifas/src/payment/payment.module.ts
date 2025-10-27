@@ -6,12 +6,12 @@ import { FakeAdapter } from './providers/fake.adapter';
 import { OrdersModule } from 'src/orders/orders.module'; // para AssignService + EmailService via OrdersModule imports
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { EmailModule } from 'src/email/email.module';
-import { PaymentController } from './payment.controller';
-import { PaymentService } from './payment.service';
+import { PaymentsController } from './payment.controller';
+import { PaymentsService } from './payment.service';
 
 @Module({
   imports: [PrismaModule, EmailModule, OrdersModule],
-  controllers: [PaymentController],
-  providers: [PaymentService, PaymentAdapterRegistry, FakeAdapter],
+  controllers: [PaymentsController],
+  providers: [PaymentsService, PaymentAdapterRegistry, FakeAdapter],
 })
 export class PaymentModule {}

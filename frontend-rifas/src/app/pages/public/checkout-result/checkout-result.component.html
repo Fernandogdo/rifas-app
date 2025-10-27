@@ -1,0 +1,12 @@
+<div class="max-w-3xl mx-auto px-4 py-16 text-center">
+  @if (status === 'success') {
+    <h1 class="text-2xl font-semibold text-slate-900">¡Pago recibido!</h1>
+    <p class="mt-2 text-slate-600">En breve recibirás tus números por email.</p>
+  } @else {
+    <h1 class="text-2xl font-semibold text-slate-900">Pago no completado</h1>
+    <p class="mt-2 text-slate-600">Inténtalo de nuevo o contáctanos con tu ID de orden.</p>
+  }
+  <div class="mt-6">
+    <a routerLink="/mis-numeros" class="rounded-xl px-4 py-2 text-sm ring-1 ring-slate-200 hover:bg-slate-50">Ver mis números</a>
+  </div>
+</div>

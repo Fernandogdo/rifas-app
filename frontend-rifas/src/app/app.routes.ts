@@ -29,12 +29,12 @@ export const routes: Routes = [
       {
         path: 'checkout-result',
         loadComponent: () =>
-          import('./pages/public/checkout-result/checkout-result')
+          import('./pages/public/checkout-result/checkout-result.component')
       },
       {
         path: 'mis-numeros',
         loadComponent: () =>
-          import('./pages/public/mis-numeros/mis-numeros')
+          import('./pages/public/mis-numeros/mis-numeros.component')
       },
     ],
   },

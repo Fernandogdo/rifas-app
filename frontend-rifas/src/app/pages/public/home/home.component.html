@@ -1,1 +1,169 @@
-<p>home.component works!</p>
+<!-- Hero -->
+<section class="relative overflow-hidden">
+  <!-- 👇 el overlay ya NO bloquea clics -->
+  <div
+    class="absolute inset-0 -z-10 pointer-events-none
+           bg-[radial-gradient(800px_400px_at_20%_-10%,rgba(15,23,42,.15),transparent),radial-gradient(600px_400px_at_90%_10%,rgba(15,23,42,.1),transparent)]">
+  </div>
+
+  <div class="bg-gradient-to-b from-slate-900 to-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-20 md:py-28 text-center text-white">
+      <p class="text-sm/6 tracking-widest uppercase text-white/70">Rifas transparentes</p>
+      <h1 class="mt-3 text-4xl md:text-6xl font-semibold tracking-tight">
+        Gana premios increíbles<br class="hidden md:block" />
+        con compras seguras y rápidas
+      </h1>
+      <p class="mt-4 max-w-2xl mx-auto text-white/80">
+        Compra tus tickets en segundos. Asignación automática sin duplicados y notificaciones por email.
+      </p>
+
+      <div class="mt-8 flex items-center justify-center gap-3">
+        <a routerLink="/" fragment="rifas"
+           class="inline-flex items-center rounded-2xl bg-white text-slate-900 px-5 py-2.5 font-medium hover:bg-slate-100">
+          Ver rifas disponibles
+        </a>
+        <a routerLink="/mis-numeros"
+           class="inline-flex items-center rounded-2xl ring-1 ring-white/30 px-5 py-2.5 font-medium hover:bg-white/10">
+          Recuperar mis números
+        </a>
+      </div>
+
+      <div class="mt-10 grid grid-cols-3 gap-6 max-w-3xl mx-auto text-left">
+        <div class="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div class="text-2xl font-semibold">Pagos</div>
+          <div class="text-sm text-white/70">Pasarela segura + idempotencia</div>
+        </div>
+        <div class="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div class="text-2xl font-semibold">Asignación</div>
+          <div class="text-sm text-white/70">Algoritmo sin duplicados</div>
+        </div>
+        <div class="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div class="text-2xl font-semibold">Email</div>
+          <div class="text-sm text-white/70">Confirmación y entrega</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Cómo funciona -->
+<section id="como-funciona" class="bg-white scroll-mt-24 md:scroll-mt-28">
+  <div class="max-w-7xl mx-auto px-4 py-16">
+    <div class="mx-auto max-w-3xl text-center">
+      <h2 class="text-2xl md:text-3xl font-semibold text-slate-900">¿Cómo funciona?</h2>
+      <p class="mt-2 text-slate-600">Proceso simple en tres pasos</p>
+    </div>
+
+    <div class="mt-10 grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-slate-200 p-6">
+        <div class="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-semibold">1</div>
+        <h3 class="mt-4 font-medium text-slate-900">Elige tu rifa</h3>
+        <p class="mt-1 text-sm text-slate-600">Explora premios y revisa disponibilidad en tiempo real.</p>
+      </div>
+      <div class="rounded-2xl border border-slate-200 p-6">
+        <div class="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-semibold">2</div>
+        <h3 class="mt-4 font-medium text-slate-900">Paga de forma segura</h3>
+        <p class="mt-1 text-sm text-slate-600">Creamos una orden “pendiente” y te llevamos a la pasarela.</p>
+      </div>
+      <div class="rounded-2xl border border-slate-200 p-6">
+        <div class="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-semibold">3</div>
+        <h3 class="mt-4 font-medium text-slate-900">Recibe tus números</h3>
+        <p class="mt-1 text-sm text-slate-600">Tras el pago, asignamos automáticamente y te enviamos email.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Rifas destacadas -->
+<section id="rifas" class="bg-slate-50 scroll-mt-24 md:scroll-mt-28">
+  <div class="max-w-7xl mx-auto px-4 py-16">
+    <div class="flex items-end justify-between">
+      <div>
+        <h2 class="text-2xl md:text-3xl font-semibold text-slate-900">Rifas disponibles</h2>
+        <p class="text-slate-600">Actualizadas en tiempo real</p>
+      </div>
+      <a routerLink="/" fragment="rifas"
+         class="hidden md:inline-flex items-center rounded-xl px-3 py-1.5 text-sm font-medium ring-1 ring-slate-200 hover:bg-white">
+        Ver todas
+      </a>
+    </div>
+
+    <!-- MODO COMPACTO / CENTRADO -->
+    <div class="mt-6">
+      <app-rifas-list [limit]="12" [showPager]="true" [centerWhenFew]="true"></app-rifas-list>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonios (dummy) -->
+<section class="bg-white">
+  <div class="max-w-7xl mx-auto px-4 py-16">
+    <div class="mx-auto max-w-3xl text-center">
+      <h2 class="text-2xl md:text-3xl font-semibold text-slate-900">Personas felices</h2>
+      <p class="mt-2 text-slate-600">Lo que dicen algunos ganadores</p>
+    </div>
+
+    <div class="mt-8 grid md:grid-cols-3 gap-6">
+      <figure class="rounded-2xl border border-slate-200 p-6 bg-white">
+        <blockquote class="text-slate-700">“Proceso rapidísimo. Pagué y en minutos recibí mis números. Todo claro.”</blockquote>
+        <figcaption class="mt-3 text-sm text-slate-500">María G.</figcaption>
+      </figure>
+      <figure class="rounded-2xl border border-slate-200 p-6 bg-white">
+        <blockquote class="text-slate-700">“Me encantó ver el progreso en vivo. Transparente y confiable.”</blockquote>
+        <figcaption class="mt-3 text-sm text-slate-500">Andrés L.</figcaption>
+      </figure>
+      <figure class="rounded-2xl border border-slate-200 p-6 bg-white">
+        <blockquote class="text-slate-700">“Recibí mail con el detalle completo de mis números. Excelente experiencia.”</blockquote>
+        <figcaption class="mt-3 text-sm text-slate-500">Daniela P.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="bg-slate-50 scroll-mt-24 md:scroll-mt-28">
+  <div class="max-w-5xl mx-auto px-4 py-16">
+    <div class="text-center">
+      <h2 class="text-2xl md:text-3xl font-semibold text-slate-900">Preguntas frecuentes</h2>
+      <p class="mt-2 text-slate-600">Resolvemos tus dudas más comunes</p>
+    </div>
+
+    <div class="mt-8 space-y-3">
+      <details class="group rounded-2xl bg-white border border-slate-200 p-5">
+        <summary class="flex cursor-pointer list-none items-center justify-between font-medium">
+          ¿Cuándo recibo mis números?
+          <span class="ml-3 text-slate-400 group-open:rotate-180 transition">⌄</span>
+        </summary>
+        <p class="mt-3 text-sm text-slate-600">Apenas el pago es confirmado por la pasarela, los asignamos y te llega un email.</p>
+      </details>
+
+      <details class="group rounded-2xl bg-white border border-slate-200 p-5">
+        <summary class="flex cursor-pointer list-none items-center justify-between font-medium">
+          ¿Cómo se evita la duplicación?
+          <span class="ml-3 text-slate-400 group-open:rotate-180 transition">⌄</span>
+        </summary>
+        <p class="mt-3 text-sm text-slate-600">La asignación es transaccional y única por rifa usando restricciones en la base de datos.</p>
+      </details>
+
+      <details class="group rounded-2xl bg-white border border-slate-200 p-5">
+        <summary class="flex cursor-pointer list-none items-center justify-between font-medium">
+          ¿Puedo recuperar mis números?
+          <span class="ml-3 text-slate-400 group-open:rotate-180 transition">⌄</span>
+        </summary>
+        <p class="mt-3 text-sm text-slate-600">Sí, en la sección “Mis números” te enviamos un link seguro a tu correo.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- CTA final -->
+<section class="bg-slate-900">
+  <div class="max-w-7xl mx-auto px-4 py-16 text-center text-white">
+    <h3 class="text-2xl md:text-3xl font-semibold">Listo para probar tu suerte?</h3>
+    <p class="mt-2 text-white/80">Elige una rifa y compra tus tickets en segundos.</p>
+    <a routerLink="/" fragment="rifas"
+       class="mt-6 inline-flex items-center rounded-2xl bg-white text-slate-900 px-5 py-2.5 font-medium hover:bg-slate-100">
+      Ver rifas
+    </a>
+  </div>
+</section>

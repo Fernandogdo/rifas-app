@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs';
 import {RifaDetailsDto} from '../../DTOs/rifa-detail.dto';
 import {RifaSummary} from '../../interfaces/rifa/rifa-summary.interface';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../environments/environment.prod';
 
 /** --------- Tipos resumen global --------- */
 

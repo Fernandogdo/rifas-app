@@ -1,11 +1,8 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist/frontend-rifas/browser" }
-    }
+    { "src": "package.json", "use": "@vercel/static-build",
+      "config": { "distDir": "dist/frontend-rifas/browser" } }
   ],
   "routes": [
     { "handle": "filesystem" },

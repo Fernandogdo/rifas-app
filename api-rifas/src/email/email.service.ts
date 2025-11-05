@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as Handlebars from 'handlebars';
+import { Resend } from 'resend';
 
 type TemplateName =
   | 'payment_confirmed'
@@ -12,25 +13,58 @@ type TemplateName =
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter;
+
+  /** Driver: 'smtp' para nodemailer | 'resend' para API HTTP */
+  private driver: 'smtp' | 'resend';
+
+  /** SMTP (local o cuando se permita) */
+  private transporter?: nodemailer.Transporter;
+
+  /** Resend (Render u otros PaaS con egress SMTP bloqueado) */
+  private resend?: Resend;
 
   constructor(private prisma: PrismaService) {
-    this.transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    });
-  }
+    // Preferimos el valor explícito; si estamos en Render y no seteaste, usamos 'resend'
+    const envDriver = (process.env.MAIL_DRIVER || '').toLowerCase();
+    this.driver =
+      (envDriver === 'smtp' || envDriver === 'resend')
+        ? (envDriver as 'smtp' | 'resend')
+        : (process.env.RENDER ? 'resend' : 'smtp');
 
-  async onModuleInit() {
-    try {
-      await this.transporter.verify();
-      this.logger.log('SMTP conectado correctamente');
-    } catch (e: any) {
-      this.logger.error('SMTP verify falló: ' + (e?.message || e));
+    if (this.driver === 'smtp') {
+      // SMTP clásico (Gmail o el que uses)
+      const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+      const port = Number(process.env.SMTP_PORT || 465);
+      const secure = port === 465; // 465 = SSL; 587 = STARTTLS
+      this.transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+    } else {
+      // Resend por API HTTP (no requiere puerto SMTP)
+      if (!process.env.RESEND_API_KEY) {
+        this.logger.warn('MAIL_DRIVER=resend pero falta RESEND_API_KEY');
+      }
+      this.resend = new Resend(process.env.RESEND_API_KEY || '');
     }
   }
 
-  // --- Fallback actual (tu switch) por si no hay plantilla en BD ---
+  async onModuleInit() {
+    if (this.driver === 'smtp') {
+      try {
+        await this.transporter!.verify();
+        this.logger.log('SMTP conectado correctamente');
+      } catch (e: any) {
+        this.logger.error('SMTP verify falló: ' + (e?.message || e));
+      }
+    } else {
+      this.logger.log('Email driver: Resend (HTTP API)');
+    }
+  }
+
+  // === Fallback en código por si no hay plantilla en BD ===
   private codeFallback(template: TemplateName, data: Record<string, any>) {
     switch (template) {
       case 'payment_confirmed': {
@@ -89,14 +123,14 @@ export class EmailService {
     }
   }
 
-  // --- Render dinámico desde BD usando Handlebars ---
+  // === Render dinámico desde BD con Handlebars; cae al fallback si no hay tpl activa ===
   private async renderFromDbOrFallback(
     template: TemplateName,
     data: Record<string, any>,
     locale = 'es-EC',
   ): Promise<{ subject: string; html: string }> {
-    // preformateos útiles para que los templates de BD funcionen igual
     const prepared: Record<string, any> = { ...data };
+
     if (template === 'numbers_assigned' && Array.isArray(prepared.numeros)) {
       prepared.numerosStr = prepared.numeros.slice().sort((a:number,b:number)=>a-b).join(', ');
     }
@@ -104,14 +138,11 @@ export class EmailService {
       prepared.total = Number(prepared.total).toFixed(2);
     }
 
-    // busca plantilla activa en BD
     const tpl = await this.prisma.emailTemplate.findUnique({
       where: { name_locale: { name: template, locale } as any },
     });
-    console.log("🚀 ~ EmailService ~ renderFromDbOrFallback ~ tpl:", tpl)
 
     if (!tpl || !tpl.isActive) {
-      // fallback a código
       return this.codeFallback(template, prepared);
     }
 
@@ -127,37 +158,33 @@ export class EmailService {
     ordenId?: string,
   ) {
     const { subject, html } = await this.renderFromDbOrFallback(template, data);
+    const from = process.env.FROM_EMAIL ?? 'no-reply@midominio.com';
 
     try {
-      await this.transporter.sendMail({
-        from: process.env.FROM_EMAIL ?? 'no-reply@midominio.com',
-        to,
-        subject,
-        html,
-      });
+      if (this.driver === 'smtp') {
+        await this.transporter!.sendMail({ from, to, subject, html });
+      } else {
+        // Resend via HTTP API
+        const res = await this.resend!.emails.send({ from, to, subject, html });
+        if ('error' in res && res.error) {
+          throw new Error(res.error.message);
+        }
+      }
 
       await this.prisma.emailLog.create({
-        data: {
-          to,
-          template,
-          data,
-          status: 'sent',
-          ordenId: ordenId ?? null,
-        },
+        data: { to, template, data, status: 'sent', ordenId: ordenId ?? null },
       });
     } catch (err: any) {
       this.logger.error(`Email error [${template}] to ${to}: ${err?.message}`);
       await this.prisma.emailLog.create({
         data: {
-          to,
-          template,
-          data,
+          to, template, data,
           status: 'failed',
           error: String(err?.message ?? err),
           ordenId: ordenId ?? null,
         },
       });
-      // si usas BullMQ, relanza para reintentos
+      // Si quieres reintentos con BullMQ, puedes relanzar:
       // throw err;
     }
   }

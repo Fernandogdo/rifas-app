@@ -59,6 +59,8 @@ export default class RifasListComponent implements OnInit, OnChanges {
 
       this.data.set(resp);
     } catch (e: any) {
+      console.log("🚀 ~ RifasListComponent ~ load ~ e:", e.message)
+      
       this.error.set(e?.message ?? 'No se pudieron cargar las rifas');
     } finally {
       this.loading.set(false);
